@@ -1,19 +1,17 @@
 const User = require('../models/user')
 
-module.exports.profile = function(req, res){
-    User.findById(req.params.id)
-        .then((user)=>{
-            if(!user){
-                console.log('Error'); return;
-            }
-            return res.render('user_profile',{
-                title: "User Profile",
-                user_profile: user
-            })
-        }).catch((err)=>{
-            console.log(err); return;
-        })
-   
+module.exports.profile = async function(req, res){
+    
+    try{
+        let user = await User.findById(req.params.id)
+        return res.render('user_profile',{
+            title: "User Profile",
+            user_profile: user
+        });
+    }catch(err){
+        console.log('Error: ', err);
+        return;
+    }
 }
 
 
@@ -39,29 +37,28 @@ module.exports.signIn = function(req, res){
 }
 
 // sign up data
-module.exports.create = function(req, res){
-    console.log(req.body);
-     if(req.body.password != req.body.confirm_password)
+module.exports.create = async function(req, res){
+    
+    try{
+        if(req.body.password != req.body.confirm_password)
          return res.redirect('back');
-     User.findOne({email: req.body.email})
-        .then((user)=>{
+        let user = await User.findOne({email: req.body.email});
             if(!user){
                 User.create({
                     email: req.body.email,
                     password: req.body.password,
                     name: req.body.name
-                }).then((user)=>{
-                    return res.redirect('/users/sign-in');
-                }).catch((err)=>{
-                    console.log('Error in creating user'); return;
-                })
+                });
+
+                return res.redirect('/users/sign-in');
             }
             else{
                 return res.redirect('/users/sign-in');
             }
-       }).catch((err)=>{
-        console.log(`Error in creating user ${err}`); return;
-       })  
+    }catch(err){
+        console.log(err);
+        return;
+    }
 }
 
 
@@ -79,21 +76,13 @@ module.exports.destroySession = function(req, res){
 }
 
 
-module.exports.update = function(req, res){
+module.exports.update = async function(req, res){
     if(req.params.id == req.user.id){
-        User.findByIdAndUpdate(req.params.id,{
+        await User.findByIdAndUpdate(req.params.id,{
             name: req.body.name,
             email: req.body.email
-        }).then((updated)=>{
-            if(!updated){
-                console.log('Error');
-                return;
-            }
-            return res.redirect('back');
-        }).catch((err)=>{
-            console.log(err);
-            return;
-        })
+        });
+        return res.redirect('back');
 }else{
     return res.status(401).send('unauthorized');
 }
